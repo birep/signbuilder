@@ -1,0 +1,149 @@
+<!doctype html>
+<style type="text/css">
+
+html {
+	width: 8in;
+	height: 3in;
+}
+
+body {
+	width: 8in;
+	height: 3in;
+}
+.container {
+	display: block;
+	width: 8in;
+	height: 3in;
+	{% if color == "green" %}
+	background: #33AA33;
+	{% elif color == "red" %}
+	background: #AA3333;
+	{% endif %}
+	border-radius: 0.5in;
+	position: absolute;
+	top: 0;
+	left: 0;
+    font-family: sans-serif;
+}
+
+.acnum {
+	position: absolute;
+	font-size: 24pt;
+	color: #FFFFFF;
+	top: 0.25in;
+	right: 0.25in;
+	display: block;
+}
+
+#comname {
+	position: absolute;
+	width: 8in;
+	height: 1in;
+	line-height: 1in;
+	top:0.5in;
+	left:0;
+	color: #FFFFFF;
+	text-align: center;
+    display: block;
+    white-space: nowrap;
+}
+
+#taxname {
+	position: absolute;
+	width: 8in;
+	height: 1in;
+	line-height: 1in;
+	top: 1.25in;
+	left:0;
+	color: #FFFFFF;
+	text-align: center;
+	display: block;
+	white-space: nowrap;
+}
+
+#origin {
+	position:absolute;
+	display: block;
+	color: #FFFFFF;
+	width: 4in;
+	text-align: center;
+	bottom: 0.25in;
+	left: 0;
+	height: 0.75in;
+	line-height: 0.75in;
+}
+
+#fam {
+	position:absolute;
+	display: block;
+	color: #FFFFFF;
+	width: 50%;
+	text-align: center;
+	bottom: 0.25in;
+	left: 4in;
+	height: 0.75in;
+	line-height: 0.75in;
+}
+
+</style>
+<title>Sign Template</title>
+<body>
+<div class="container">
+{% if acnum|length > 0 %}
+<div class="acnum">{{ acnum }}</div>
+{% endif %}
+{% if comname|length > 0 %}
+<div id="comname">{{ comname }}</div>
+{% endif %}
+{% if taxname|length > 0 %}
+<div id="taxname">{{ taxname }}</div>
+{% endif %}
+{% if fam|length > 0 %}
+<div id="fam">Family: {{ fam }}</div>
+{% endif %}
+{% if origin|length > 0 %}
+<div id="origin">Origin: {{ origin }}</div>
+{% endif %}
+</div>
+<script src=" {{ url_for('static', filename='js/jquery.js') }}"></script>
+<script>(function( $ ){
+
+  $.fn.fitText = function( kompressor, options ) {
+
+    // Setup options
+    var compressor = kompressor || 1,
+        settings = $.extend({
+          'minFontSize' : Number.NEGATIVE_INFINITY,
+          'maxFontSize' : Number.POSITIVE_INFINITY
+        }, options);
+
+    return this.each(function(){
+
+      // Store the object
+      var $this = $(this);
+
+      // Resizer() resizes items based on the object width divided by the compressor * 10
+      var resizer = function () {
+        $this.css('font-size', Math.max(Math.min($this.width() / (compressor*10), parseFloat(settings.maxFontSize)), parseFloat(settings.minFontSize)));
+      };
+
+      // Call once to set.
+      resizer();
+
+      // Call on resize. Opera debounces their resize by default.
+      $(window).on('resize.fittext orientationchange.fittext', resizer);
+
+    });
+
+  };
+
+})( jQuery );
+</script>
+<script>$(document).ready(function() {
+$("#comname").fitText(1.6);
+$("#taxname").fitText(1.6);
+$("#fam").fitText(1.6);
+$("#origin").fitText(1.6);
+});
+</script>
+</body>
