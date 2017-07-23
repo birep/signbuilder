@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 import flask_wkhtmltopdf
 from flask_wkhtmltopdf import Wkhtmltopdf
 from werkzeug.utils import secure_filename
-import sys, os, csv, urllib
+import sys, os, csv, urllib, urllib2
+import zipfile
 
 UPLOAD_FOLDER = "C:/Python27/ArcGIS10.4/uploads/"
 ALLOWED_EXTENSIONS = set(['csv'])
@@ -19,7 +20,25 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-script = """<script>
+script = """<script>$(document).ready( function() {
+ $('#go').click(function() {
+var signlist = {};
+$('a').each( function(index) {
+    if($(this).next('input').prop('checked')) {
+    signlist[index] = $(this).attr('href') + "&color=red";
+    }
+    else {
+    signlist[index] = $(this).attr('href') + "&color=green";
+    }
+    });
+    $('div').fadeOut("slow").promise().done(function() {
+        document.write("This will take a moment. You will be redirected shortly, please do not refresh.");
+        $.post("/makezip", JSON.stringify(signlist), function( da ) {
+        $('body').replaceWith(da);      
+      });
+        });
+ });  
+
 $('a').on('click', function(e)   {
     e.preventDefault();
     var theurl = $(this).attr('href');
@@ -29,7 +48,10 @@ $('a').on('click', function(e)   {
     else {
     window.open(theurl + "&color=green")
     }
-           });</script>"""
+           });
+
+});
+</script>"""
 
 
 @app.route('/uploads/<filename>')
@@ -46,7 +68,7 @@ def uploaded_file(filename):
             output.append("<div><a href='/makesign?" + str(urllib.urlencode({'acnum':acnum, 'comname':comname, 'taxname':taxname, 'origin':origin,'fam':fam})) + "'>Sign for " + taxname + "</a> | Red sign? <input type='checkbox'></div>")
         output =  "<br>".join(list(set(output)))
         output = "<html><script src='" + url_for('static', filename='js/jquery.js') + "'></script><body>" + output + script
-        return output
+        return output + "<br><input id='go' type='button' value='Save all to Zip Archive'></body></html>"
     #return send_from_directory(app.config['UPLOAD_FOLDER'],
     #                           filename)
 
@@ -59,6 +81,20 @@ def hello():
     fam = request.args.get('fam','')
     color = request.args.get('color','')
     return wkhtmltopdf.render_template_to_pdf("template.html", acnum=acnum, comname=comname, taxname=taxname, origin=origin, fam=fam,  color=color)
+
+@app.route('/makezip',methods=['POST'])
+def make_zip():
+    zf = zipfile.ZipFile('c:/Python27/ArcGIS10.4/static/signorder.zip', mode="w")
+    urldict = request.get_json(force=True)
+    for i in range(len(urldict)):
+        url = "http://localhost:5000" + urldict[str(i)] 
+        print url
+        response = urllib2.urlopen(url)
+        trimmed = url[url.find("acnum=")+6:]
+        acnum = trimmed[:trimmed.find("&")]
+        zf.writestr(acnum + '.pdf', response.read())
+    zf.close()
+    return "<a href='" + url_for('static', filename='signorder.zip') + "'>Download Zip File</a>"
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
@@ -127,3 +163,5 @@ def upload_file():
 </ol>
 
     '''
+if __name__ == '__main__':
+    app.run(threaded=True)
